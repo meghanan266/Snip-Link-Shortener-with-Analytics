@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  relationMode = "prisma"
+}
+
+model Link {
+  id        String    @id @default(cuid())
+  url       String    @db.Text
+  slug      String    @unique
+  password  String?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  clicks    Click[]
+
+  @@index([slug])
+}
+
+model Click {
+  id        String   @id @default(cuid())
+  linkId    String
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  country   String?
+  device    String?
+  browser   String?
+  referrer  String?
+  timestamp DateTime @default(now())
+
+  @@index([linkId])
+  @@index([timestamp])
+}
+
+model ApiKey {
+  id         String   @id @default(cuid())
+  hashedKey  String   @unique
+  name       String?
+  createdAt  DateTime @default(now())
+}
