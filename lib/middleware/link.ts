@@ -2,8 +2,39 @@ import { NextRequest, NextFetchEvent, NextResponse } from "next/server"
 import { linkCache } from "@/lib/api/links/cache"
 import { prisma } from "@/lib/prisma"
 import { recordClick } from "@/lib/analytics"
+import { redirectLimiter } from "@/lib/rate-limit"
 
 export async function LinkMiddleware(req: NextRequest, ev: NextFetchEvent) {
+  // Rate limit by IP address
+  // Get IP from x-forwarded-for header (set by Vercel and most proxies)
+  // Fall back to "anonymous" if not available (local dev)
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "anonymous"
+
+  const { success, limit, remaining, reset } = await redirectLimiter.limit(ip)
+
+  if (!success) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "rate_limited",
+          message: "Too many requests. Please slow down.",
+        },
+      },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": limit.toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+          "X-RateLimit-Reset": reset.toString(),
+          "Retry-After": "60",
+        },
+      }
+    )
+  }
+
   // 1. Extract slug from the URL path
   // e.g. /abc123 -> "abc123"
   const slug = req.nextUrl.pathname.slice(1)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hashApiKey } from "@/lib/api-key"
+import { apiLimiter } from "@/lib/rate-limit"
 
 type RouteHandler = (
   req: NextRequest,
@@ -60,7 +61,31 @@ export function withApiKey(handler: RouteHandler): RouteHandler {
       )
     }
 
-    // 4. Valid key — call the original handler
+    // Rate limit by API key identifier
+    // We use the hashed key as the identifier so we never store the plain key
+    const { success, limit, remaining, reset } = await apiLimiter.limit(hashedKey)
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "rate_limited",
+            message: "API rate limit exceeded. Maximum 60 requests per minute.",
+          },
+        },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+            "Retry-After": "60",
+          },
+        }
+      )
+    }
+
+    // 4. Valid key and within rate limit — call the original handler
     return handler(req, context)
   }
 }
