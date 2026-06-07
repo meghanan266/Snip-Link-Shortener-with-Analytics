@@ -12,7 +12,7 @@ const createLinkSchema = z.object({
   expiresAt: z.string().optional(),
 })
 
-async function createLinkHandler(req: NextRequest, context: { params: Record<string, string> }) {
+async function createLinkHandler(req: NextRequest, _context: { params: Record<string, string> }) {
   try {
     // 1. Parse and validate request body
     const body = await req.json()
@@ -22,7 +22,7 @@ async function createLinkHandler(req: NextRequest, context: { params: Record<str
         {
           error: {
             code: "validation_error",
-            message: parsed.error.errors[0].message,
+            message: parsed.error.issues[0].message,
           },
         },
         { status: 400 }
@@ -54,7 +54,7 @@ async function createLinkHandler(req: NextRequest, context: { params: Record<str
 
 export const POST = withApiKey(createLinkHandler)
 
-export async function GET() {
+async function listLinksHandler() {
   try {
     const links = await prisma.link.findMany({
       orderBy: { createdAt: "desc" },
@@ -89,3 +89,5 @@ export async function GET() {
     )
   }
 }
+
+export const GET = withApiKey(listLinksHandler)

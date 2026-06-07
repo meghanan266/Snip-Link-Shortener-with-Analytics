@@ -5,11 +5,10 @@ import { ingestClick } from "@/lib/api/analytics/ingest-click"
 
 const clickEventSchema = z.object({
   slug: z.string().min(1),
-  url: z.string().optional(),
-  country: z.string().optional(),
-  userAgent: z.string().optional(),
-  referrer: z.string().optional(),
-  timestamp: z.string().optional(),
+  country: z.string(),
+  userAgent: z.string(),
+  referrer: z.string(),
+  timestamp: z.string(),
 })
 
 export async function POST(req: NextRequest) {
@@ -51,13 +50,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate payload shape with Zod before touching the DB
-    const parsed = clickEventSchema.safeParse(JSON.parse(body))
+    let bodyJson: unknown
+    try {
+      bodyJson = JSON.parse(body)
+    } catch {
+      return NextResponse.json(
+        { error: { code: "validation_error", message: "Request body is not valid JSON" } },
+        { status: 400 }
+      )
+    }
+    const parsed = clickEventSchema.safeParse(bodyJson)
     if (!parsed.success) {
       return NextResponse.json(
         {
           error: {
             code: "validation_error",
-            message: parsed.error.errors[0].message,
+            message: parsed.error.issues[0].message,
           },
         },
         { status: 400 }

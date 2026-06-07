@@ -11,7 +11,7 @@ export async function ingestClick(event: ClickEvent): Promise<void> {
   // Link was deleted between the click and processing — skip silently.
   // Return without error so QStash does not retry.
   if (!link) {
-    console.log(`[ingest] Link not found for slug: ${event.slug} — skipping`)
+    console.warn(`[ingest] Link not found for slug: ${event.slug} — skipping`)
     return
   }
 

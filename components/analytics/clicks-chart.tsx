@@ -53,7 +53,7 @@ export function ClicksChart({ data }: ClicksChartProps) {
             color: "#fff",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [value, "Clicks"]}
+          formatter={(value) => [value ?? 0, "Clicks"]}
         />
         <Line
           type="monotone"

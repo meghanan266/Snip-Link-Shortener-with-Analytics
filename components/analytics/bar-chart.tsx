@@ -62,7 +62,7 @@ export function HorizontalBarChart({
             color: "#fff",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [value, "Clicks"]}
+          formatter={(value) => [value ?? 0, "Clicks"]}
           cursor={{ fill: "rgba(255,255,255,0.05)" }}
         />
         <Bar dataKey="count" radius={[0, 4, 4, 0]}>
